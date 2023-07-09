@@ -1,10 +1,14 @@
-;; bind hyper key
 
+;; nextstep fn (macOS) to hyper
 (setq ns-function-modifier 'hyper)
+
+;; view mode on when read-only
+
+(setq view-read-only t)
 
 ;; the next two lines make tabs into 4 spaces
 
-(setq-default indent-tabs-mode nil)
+(setq-default indent-tabs-mode -1)
 (setq-default tab-width 4)
 
 ;; the following series of lines was created with M-x customize-...
@@ -18,17 +22,9 @@
  '(Man-switches "-a")
  '(custom-enabled-themes '(tango-dark))
  '(inhibit-startup-screen t)
- '(package-selected-packages '(markdown-mode)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+ '(package-selected-packages '(neotree rainbow-delimiters)))
 
-;; the next lines are intended to make 'man-mode' easier to use
-
-(global-set-key (kbd "H-m s") 'man)
+;; convenience features
 
 (defun man-other-window ()
   "open a `man' in a new window."
@@ -36,32 +32,25 @@
   (let ((Man-notify-method 'aggressive))
     (call-interactively 'man)))
 
-(global-set-key (kbd "H-m o") 'man-other-window)
-
-;; the next few are for eshell
-
 (defun eshell-other-window ()
- "Open a `shell' in a new window."
+ "Open an `eshell' in a new window."
  (interactive)
  (let ((buf (eshell)))
    (switch-to-buffer (other-buffer buf))
     (switch-to-buffer-other-window buf)))
 
+;; bind `eshell's
 (global-set-key (kbd "H-s o") 'eshell-other-window)
 (global-set-key (kbd "H-s H-s") 'eshell)
-
-;; make my filing life easier
-
-(global-set-key (kbd "H-f s") 'find-file)
-(global-set-key (kbd "H-f o") 'find-file-other-window)
 
 ;; fix alias warning since ls doesn't support --dired
 
 (when (string= system-type "darwin")       
   (setq dired-use-ls-dired nil))
 
+;; fix man-auto complete slowness
 
-;; fix M-x man RET [man-number] command-name RET slowness...
+(declare-function 'Man-default-man-entry "man")
 
 (define-advice man (:around (orig-func &rest args) no-completing-read)
   "Inhibit `completing-read'."
@@ -80,3 +69,60 @@
 ;; Undo with:
 ;; (advice-remove 'man 'man@no-completing-read)
 
+(defun connect-hexaconta ()
+  "let me `ssh' into hexaconta"
+  (interactive)
+  (dired "/ssh:hexaconta:/home/arteen"))
+
+;; (defun connect-cs111 ()
+;;   "let me `ssh' into cs111 VM"
+;;   (interactive)
+;;   (dired "/ssh:cs111@localhost#2222:/home/cs111/Desktop/cs111-assignments/lab4/lab4"))
+
+;; set-up gpg
+;; (require 'epa-file)
+;; (epa-file-enable)
+
+;; for rainbow delims when programming
+(add-hook 'prog-mode-hook 'rainbow-delimiters-mode)
+
+;; backup files go away but not completely
+(setq backup-directory-alist '(("." . "~/.emacs.d/my-backups")))
+
+;; don't pop windows up without my permission
+(setq pop-up-windows nil)
+
+(setq switch-to-buffer-obey-display-actions t)
+(add-to-list 'display-buffer-alist '("\\*grep\\*.*" display-buffer-reuse-window))
+
+;; dired or so god help me
+
+(eval-after-load "dired"
+  '(progn
+	 (define-key dired-mode-map "c" 'dired-create-empty-file)
+	 (define-key dired-mode-map "r" 'dired-do-compress-to)
+	 )
+  )
+
+;; god help me
+
+(require 'package)
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+
+
+;; amazing
+(require 'neotree)
+
+;; stays where it was
+(global-set-key (kbd "H-k") 'neotree-toggle)
+
+;; comes here
+
+(global-set-key (kbd "H-m") 'neotree-find)
