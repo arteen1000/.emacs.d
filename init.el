@@ -6,6 +6,10 @@
 
 (setq view-read-only t)
 
+;; want to see column number
+
+(setq column-number-mode t)
+
 ;; the next two lines make tabs into 4 spaces
 
 (setq-default indent-tabs-mode nil)
@@ -22,7 +26,7 @@
  '(Man-switches "-a")
  '(custom-enabled-themes '(tango-dark))
  '(inhibit-startup-screen t)
- '(package-selected-packages '(neotree rainbow-delimiters)))
+ '(package-selected-packages '(solarized-theme dired-subtree rainbow-delimiters)))
 
 ;; convenience features
 
@@ -68,7 +72,7 @@
   (apply orig-func args))
 
 ;; Undo with:
-;; (advice-remove 'man 'man@no-completing-read)
+(advice-remove 'man 'man@no-completing-read)
 
 (defun connect-hexaconta ()
   "let me `ssh' into hexaconta"
@@ -83,17 +87,15 @@
 (defun connect-lug ()
   "let me `ssh' into lug"
   (interactive)
-  (dired "/ssh:lug:/"))
+  (dired "/ssh:root@lug:/var/www/html"))
 
 ;; set-up gpg
 ;; (require 'epa-file)
 ;; (epa-file-enable)
 
-;; for rainbow delims when programming
-(add-hook 'prog-mode-hook 'rainbow-delimiters-mode)
+;; tramp is annoying
+(setq tramp-auto-save-directory "/tmp")
 
-;; backup files go away but not completely
-(setq backup-directory-alist '(("." . "~/.emacs.d/my-backups")))
 
 ;; don't pop windows up without my permission
 ;; (setq pop-up-windows nil)
@@ -115,26 +117,12 @@
 (require 'package)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 
-;; amazing
-(require 'neotree)
+;; because i'm too lazy to install tree-sitter
+(use-package rainbow-delimiters
+  :ensure t)
 
-;; stays where it was
-(global-set-key (kbd "H-k") 'neotree-toggle)
-
-;; comes here
-
-(global-set-key (kbd "H-m") 'neotree-find)
-
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-
-;; what if I wanna see my hidden files?
-
-(global-set-key (kbd "H-t") 'neotree-hidden-file-toggle)
+;; for rainbow delims when programming
+(add-hook 'prog-mode-hook 'rainbow-delimiters-mode)
 
 ;; try a fix for grep ...
 
@@ -151,8 +139,19 @@
 
 (add-hook 'compilation-mode-hook #'my-compilation-mode-hook)
 
-;; let us try
+;; i really don't want you to mess with my windows
 
 (customize-set-variable 'display-buffer-base-action
                         '((display-buffer-reuse-window display-buffer-same-window)
                           (reusable-frames . t)))
+
+;; hello
+(use-package dired-subtree
+        :ensure t
+        :bind (:map dired-mode-map
+                    ("i" . dired-subtree-insert)
+                    (";" . dired-subtree-remove)
+                    ("<tab>" . dired-subtree-toggle)
+                    ("<backtab>" . dired-subtree-cycle)))
+
+(setq native-comp-async-report-warnings-errors 'silent)
