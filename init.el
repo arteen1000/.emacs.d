@@ -1,22 +1,22 @@
+;; --:**- init.el --
+;; Code:
 
-;; nextstep fn (macOS) to hyper
-(setq ns-function-modifier 'hyper)
+(setq ns-function-modifier 'hyper) ;; nextstep fn (macOS) to hyper
+(setq view-read-only t) ;; view mode on when read-only
+(setq column-number-mode t) ;; want to see column number
+(setq-default indent-tabs-mode nil) ;; indentation can't insert tabs
+(setq-default tab-width 4) ;; make tab-width 4 (spaces)
+(setq tramp-auto-save-directory "/tmp")
+(global-auto-revert-mode) ;; refresh buffer if changed on disk
+;; (fset 'yes-or-no-p 'y-or-n-p) ;; set yes/no prompt to y/n
+(setq use-short-answers t) ;; cleaner way to do the above, affects more funcs too
+;; (visual-line-mode) ;; make it work on "visual" lines instead of logical
+(delete-selection-mode) ;; if I have a region active and I type, get rid of the region
+;; (add-to-list 'custom-theme-load-path "~/.emacs.d/themes")
+(setq scroll-error-top-bottom t) ;; if my movement makes me go past end of buf (or beg), just take me there, instead of signalling error straight away
 
-;; view mode on when read-only
-
-(setq view-read-only t)
-
-;; want to see column number
-
-(setq column-number-mode t)
-
-;; the next two lines make tabs into 4 spaces
-
-(setq-default indent-tabs-mode nil)
-(setq-default tab-width 4)
-
-;; the following series of lines was created with M-x customize-...
-
+(setq native-comp-async-report-warnings-errors 'silent)
+(add-hook 'prog-mode-hook #'hs-minor-mode) ;; code folding
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -24,11 +24,10 @@
  ;; If there is more than one, they won't work right.
  '(Man-notify-method 'pushy)
  '(Man-switches "-a")
- '(custom-enabled-themes '(tango-dark))
  '(inhibit-startup-screen t)
- )
-
-;; convenience features
+ '(package-selected-packages
+   '(expand-region all-the-icons-dired all-the-icons dired-sidebar dired-subtree doom-themes))
+ '(treesit-font-lock-level 4))
 
 (defun man-other-window ()
   "open a `man' in a new window."
@@ -44,39 +43,37 @@
    (switch-to-buffer (other-buffer buf))
     (switch-to-buffer-other-window buf)))
 
-;; bind `eshell's
 (global-set-key (kbd "H-s o") 'eshell-other-window)
 (global-set-key (kbd "H-s H-s") 'eshell)
 
-;; bind `man's
 (global-set-key (kbd "H-m o") 'man-other-window)
 (global-set-key (kbd "H-m H-m") 'man)
 
-
-;; fix alias warning since ls doesn't support --dired
+(global-set-key (kbd "H-f o") 'find-file-other-window)
+(global-set-key (kbd "H-f H-f") 'find-file)
 
 (when (string= system-type "darwin")       
-  (setq dired-use-ls-dired nil))
+  (setq dired-use-ls-dired nil)) ;; darwin ls doesn't support --dired
 
-;; fix man-auto complete slowness
+;; (fix?) man auto-complete slowness on MacOS
 
-;; (declare-function 'Man-default-man-entry "man")
+(declare-function 'Man-default-man-entry "man")
 
-;; (define-advice man (:around (orig-func &rest args) no-completing-read)
-;;   "Inhibit `completing-read'."
-;;   (interactive
-;;    (list (let* ((default-entry (Man-default-man-entry))
-;;                 (input (read-string
-;;                         (format-prompt "Manual entry"
-;;                                        (and (not (equal default-entry ""))
-;;                                             default-entry))
-;;                         nil 'Man-topic-history default-entry)))
-;;            (if (string= input "")
-;;                (error "No man args given")
-;;              input))))
-;;   (apply orig-func args))
+(define-advice man (:around (orig-func &rest args) no-completing-read)
+  "Inhibit `completing-read'."
+  (interactive
+   (list (let* ((default-entry (Man-default-man-entry))
+                (input (read-string
+                        (format-prompt "Manual entry"
+                                       (and (not (equal default-entry ""))
+                                            default-entry))
+                        nil 'Man-topic-history default-entry)))
+           (if (string= input "")
+               (error "No man args given")
+             input))))
+  (apply orig-func args))
 
-;; ;; Undo with:
+;; Undo with:
 ;; (advice-remove 'man 'man@no-completing-read)
 
 (defun connect-hexaconta ()
@@ -84,22 +81,137 @@
   (interactive)
   (dired "/ssh:hexaconta:/home/arteen"))
 
-;; (defun connect-cs111 ()
-;;   "let me `ssh' into cs111 VM"
-;;   (interactive)
-;;   (dired "/ssh:cs111@localhost#2222:/home/cs111/Desktop/cs111-assignments/lab4/lab4"))
-
 (defun connect-lug ()
   "let me `ssh' into lug"
   (interactive)
   (dired "/ssh:root@lug:/var/www/html"))
 
-;; set-up gpg
-;; (require 'epa-file)
-;; (epa-file-enable)
+;; initialize package sources
+(require 'package)
+;; (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/") t)
+;; (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+(setq package-archives
+      '(("gnu" . "https://elpa.gnu.org/packages/")
+        ("nongnu" . "https://elpa.nongnu.org/nongnu/")
+        ("melpa-stable" . "https://stable.melpa.org/packages/")
+        ("melpa" . "https://melpa.org/packages/"))
+      package-archive-priorities
+      '(("gnu" . 4)
+        ("nongnu" . 3)
+        ("melpa-stable" . 2)
+        ("melpa" . 1))
+      )
+(package-initialize)
 
-;; tramp is annoying
-(setq tramp-auto-save-directory "/tmp")
+(use-package doom-themes
+  :ensure t
+  :config
+  ;; Global settings (defaults)
+  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+        doom-themes-enable-italic t) ; if nil, italics is universally disabled
+  (load-theme 'doom-vibrant t)
+
+  ;; Enable flashing mode-line on errors
+  (doom-themes-visual-bell-config)
+  ;; Corrects (and improves) org-mode's native fontification.
+  (doom-themes-org-config))
+
+(use-package dired-subtree
+        :ensure t
+        :bind (:map dired-mode-map
+                    ("<tab>" . dired-subtree-toggle)
+                    ("<backtab>" . dired-subtree-cycle)))
+
+;; M-x all-the-icons-install-fonts
+
+(use-package all-the-icons
+  :if (display-graphic-p))
+
+(use-package all-the-icons-dired
+  :if (display-graphic-p)
+  :hook (dired-mode . (lambda ()
+                        (unless (file-remote-p default-directory)
+                          (all-the-icons-dired-mode)))
+                    )
+  )
+
+(use-package dired-sidebar
+  :bind (("H-k" . dired-sidebar-toggle-sidebar))
+  :ensure t
+  :commands (dired-sidebar-toggle-sidebar)
+  :config
+  (advice-add 'dired-subtree-toggle :after (lambda () ;; else icons don't show
+                                             (when all-the-icons-dired-mode
+                                               (revert-buffer)))))
+
+(setq dired-omit-files
+    (rx (or (seq bol (? ".") "#")     ;; emacs autosave files
+        (seq bol "." (not (any "."))) ;; dot-files
+        (seq "~" eol)                 ;; backup-files
+        )))
+
+(eval-after-load "dired"
+  '(progn
+	 (define-key dired-mode-map "b" 'dired-create-empty-file)
+     (define-key dired-mode-map "e" 'dired-omit-mode)
+	 )
+  )
+
+(setq treesit-language-source-alist ;; set up treesit grammars
+      '(
+        (css "https://github.com/tree-sitter/tree-sitter-css")
+        (javascript "https://github.com/tree-sitter/tree-sitter-javascript")
+        (json "https://github.com/tree-sitter/tree-sitter-json")
+        (make "https://github.com/alemuller/tree-sitter-make")
+        (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+        (python "https://github.com/tree-sitter/tree-sitter-python")
+        (c "https://github.com/tree-sitter/tree-sitter-c")
+        (cpp "https://github.com/tree-sitter/tree-sitter-cpp")
+        )
+      )
+
+;; (mapc #'treesit-install-language-grammar (mapcar #'car treesit-language-source-alist)) ;; run this to install grammars
+
+(setq major-mode-remap-alist ;; a bit hacky, for treesit modes
+      '((css-mode . css-ts-mode)
+        (javascript-mode . js-ts-mode)
+        (js-json-mode . json-ts-mode)
+        (python-mode . python-ts-mode)
+        (c-mode . c-ts-mode)
+        (c++-mode . c++-ts-mode)
+        )
+      )
+
+(use-package expand-region
+  :ensure t
+  :bind ("C-=" . er/expand-region))
+
+(defun advice--all-the-icons-dired--icon (file)
+  "Return the icon for FILE."
+  (if (file-directory-p file)
+      (all-the-icons-material "folder"
+                              :face 'all-the-icons-dired-dir-face
+                              :v-adjust all-the-icons-dired-v-adjust)
+    (apply (car all-the-icons-default-file-icon) (cdr all-the-icons-default-file-icon))))
+
+(advice-add 'all-the-icons-dired--icon :override #'advice--all-the-icons-dired--icon)
+
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+
+;; Old:
+
+;; (defun connect-cs111 ()
+;;   "let me `ssh' into cs111 VM"
+;;   (interactive)
+;;   (dired "/ssh:cs111@localhost#2222:/home/cs111/Desktop/cs111-assignments/lab4/lab4"))
+
+;; (require 'epa-file) ;; hot-fix, no longer needed
+;; (epa-file-enable)
 
 ;; don't pop windows up without my permission
 ;; (setq pop-up-windows nil)
@@ -107,21 +219,6 @@
 ;; (setq switch-to-buffer-obey-display-actions t)
 ;; (add-to-list 'display-buffer-alist '("\\*grep\\*.*" display-buffer-reuse-window))
 
-;; dired or so god help me
-
-(eval-after-load "dired"
-  '(progn
-	 (define-key dired-mode-map "c" 'dired-create-empty-file)
-	 (define-key dired-mode-map "r" 'dired-do-compress-to)
-	 )
-  )
-
-;; god help me
-
-;; (require 'package)
-;; (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
-
-;; because i'm too lazy to install tree-sitter
 ;; (use-package rainbow-delimiters
 ;;   :ensure t)
 
@@ -157,5 +254,3 @@
 ;;                     (";" . dired-subtree-remove)
 ;;                     ("<tab>" . dired-subtree-toggle)
 ;;                     ("<backtab>" . dired-subtree-cycle)))
-
-;; (setq native-comp-async-report-warnings-errors 'silent)
