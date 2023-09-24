@@ -1,4 +1,4 @@
-;; --:**- init.el --
+;; --:**- init.el --  -*- lexical-binding: t; -*- 
 ;; Code:
 
 (setq ns-function-modifier 'hyper) ;; nextstep fn (macOS) to hyper
@@ -51,6 +51,8 @@
 
 (global-set-key (kbd "H-f o") 'find-file-other-window)
 (global-set-key (kbd "H-f H-f") 'find-file)
+
+(global-set-key (kbd "H-g") 'occur) ;; grep-like find lines action
 
 (when (string= system-type "darwin")       
   (setq dired-use-ls-dired nil)) ;; darwin ls doesn't support --dired
