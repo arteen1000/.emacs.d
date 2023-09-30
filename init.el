@@ -1,5 +1,7 @@
-;; --:**- init.el --  -*- lexical-binding: t; -*- 
+;; --:**- init.el --  -*- lexical-binding: t; -*-
 ;; Code:
+
+;; Note: git-timemachine may be useful at some point
 
 (setq ns-function-modifier 'hyper) ;; nextstep fn (macOS) to hyper
 (setq view-read-only t) ;; view mode on when read-only
@@ -7,13 +9,26 @@
 (setq-default indent-tabs-mode nil) ;; indentation can't insert tabs
 (setq-default tab-width 4) ;; make tab-width 4 (spaces)
 (setq tramp-auto-save-directory "/tmp")
-(global-auto-revert-mode) ;; refresh buffer if changed on disk
+(global-auto-revert-mode) ;; refresh buffer if file changed on disk
 ;; (fset 'yes-or-no-p 'y-or-n-p) ;; set yes/no prompt to y/n
 (setq use-short-answers t) ;; cleaner way to do the above, affects more funcs too
 ;; (visual-line-mode) ;; make it work on "visual" lines instead of logical
 (delete-selection-mode) ;; if I have a region active and I type, get rid of the region
 ;; (add-to-list 'custom-theme-load-path "~/.emacs.d/themes")
 (setq scroll-error-top-bottom t) ;; if my movement makes me go past end of buf (or beg), just take me there, instead of signalling error straight away
+
+
+(winner-mode) ;; allow to undo frame window-split changes with C-c <left> and re-do with C-c <right>
+
+
+
+;; makes consistent with shell
+;; but this messes with mark being set before things like M->
+;; (defadvice kill-region (before unix-werase activate compile)
+;;   "When called interactively with no active region, delete a single word backwards instead."
+;;   (interactive
+;;    (if mark-active (list (region-beginning) (region-end))
+;;      (list (save-excursion (backward-word 1) (point)) (point)))))
 
 (setq native-comp-async-report-warnings-errors 'silent)
 (add-hook 'prog-mode-hook #'hs-minor-mode) ;; code folding
@@ -25,6 +40,7 @@
  '(Man-notify-method 'pushy)
  '(Man-switches "-a")
  '(inhibit-startup-screen t)
+ '(package-native-compile t)
  '(package-selected-packages
    '(expand-region all-the-icons-dired all-the-icons dired-sidebar dired-subtree doom-themes))
  '(treesit-font-lock-level 4))
@@ -49,10 +65,58 @@
 (global-set-key (kbd "H-m o") 'man-other-window)
 (global-set-key (kbd "H-m H-m") 'man)
 
-(global-set-key (kbd "H-f o") 'find-file-other-window)
-(global-set-key (kbd "H-f H-f") 'find-file)
+(global-set-key (kbd "H-o") 'occur) ;; grep-like find lines action within same file
 
-(global-set-key (kbd "H-g") 'occur) ;; grep-like find lines action
+(defun toggle-window-split ()
+  (interactive)
+  (if (= (count-windows) 2)
+      (let* ((this-win-buffer (window-buffer))
+             (next-win-buffer (window-buffer (next-window)))
+             (this-win-edges (window-edges (selected-window)))
+             (next-win-edges (window-edges (next-window)))
+             (this-win-2nd (not (and (<= (car this-win-edges)
+                                         (car next-win-edges))
+                                     (<= (cadr this-win-edges)
+                                         (cadr next-win-edges)))))
+             (splitter
+              (if (= (car this-win-edges)
+                     (car (window-edges (next-window))))
+                  'split-window-horizontally
+                'split-window-vertically)))
+        (delete-other-windows)
+        (let ((first-win (selected-window)))
+          (funcall splitter)
+          (if this-win-2nd (other-window 1))
+          (set-window-buffer (selected-window) this-win-buffer)
+          (set-window-buffer (next-window) next-win-buffer)
+          (select-window first-win)
+          (if this-win-2nd (other-window 1))))))
+
+;; (add-to-list 'load-path "~/.emacs.d/orphan-packages/")
+;; (require 'transpose-frame)
+(global-set-key (kbd "H-t") 'toggle-window-split)
+
+;; want an easy way to move between windows
+;; firstly, remove C-<arrow keys> keybindings for macOS
+;; Settings -> Keyboard Shortcuts -> Mission Control
+;; rebind to use <CMD> key instead, then apply this
+;; to let us navigate windows with C-<arrow keys>
+;; notably: the UP and DOWN keys are bound to "Mission Control"
+;; and "Applications Windows"
+(windmove-default-keybindings 'control)
+
+;; now, these allow us to swap our window states (buffers)
+(windmove-swap-states-default-keybindings '(shift control))
+
+;; and finally, (this overrides previous M-<up> and M-<down>
+;; but it's fine, because equivalent functionality for left-to-right
+;; languages is present in M-f and M-b
+(windmove-delete-default-keybindings 'none 'meta)
+
+
+;; this will delete surrounding newlines
+(global-set-key (kbd "C-S-<backspace>") 'delete-blank-lines)
+
 
 (when (string= system-type "darwin")       
   (setq dired-use-ls-dired nil)) ;; darwin ls doesn't support --dired
@@ -103,7 +167,15 @@
         ("melpa-stable" . 2)
         ("melpa" . 1))
       )
-(package-initialize)
+
+;; make sure that environment variables correctly inherited from shell on MacOS
+;; even when not started from inside the shell
+(use-package exec-path-from-shell
+  :ensure t
+  :config
+  (when (memq window-system '(mac ns x))
+    (exec-path-from-shell-initialize))
+  )
 
 (use-package doom-themes
   :ensure t
