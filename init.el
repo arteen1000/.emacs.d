@@ -154,8 +154,6 @@
 
 ;; initialize package sources
 (require 'package)
-;; (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/") t)
-;; (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (setq package-archives
       '(("gnu" . "https://elpa.gnu.org/packages/")
         ("nongnu" . "https://elpa.nongnu.org/nongnu/")
@@ -190,33 +188,6 @@
   ;; Corrects (and improves) org-mode's native fontification.
   (doom-themes-org-config))
 
-(use-package dired-subtree
-        :ensure t
-        :bind (:map dired-mode-map
-                    ("<tab>" . dired-subtree-toggle)
-                    ("<backtab>" . dired-subtree-cycle)))
-
-;; M-x all-the-icons-install-fonts
-
-(use-package all-the-icons
-  :if (display-graphic-p))
-
-(use-package all-the-icons-dired
-  :if (display-graphic-p)
-  :hook (dired-mode . (lambda ()
-                        (unless (file-remote-p default-directory)
-                          (all-the-icons-dired-mode)))
-                    )
-  )
-
-(use-package dired-sidebar
-  :bind (("H-k" . dired-sidebar-toggle-sidebar))
-  :ensure t
-  :commands (dired-sidebar-toggle-sidebar)
-  :config
-  (advice-add 'dired-subtree-toggle :after (lambda () ;; else icons don't show
-                                             (when all-the-icons-dired-mode
-                                               (revert-buffer)))))
 
 (setq dired-omit-files
     (rx (or (seq bol (? ".") "#")     ;; emacs autosave files
@@ -260,15 +231,6 @@
   :ensure t
   :bind ("C-=" . er/expand-region))
 
-(defun advice--all-the-icons-dired--icon (file)
-  "Return the icon for FILE."
-  (if (file-directory-p file)
-      (all-the-icons-material "folder"
-                              :face 'all-the-icons-dired-dir-face
-                              :v-adjust all-the-icons-dired-v-adjust)
-    (apply (car all-the-icons-default-file-icon) (cdr all-the-icons-default-file-icon))))
-
-(advice-add 'all-the-icons-dired--icon :override #'advice--all-the-icons-dired--icon)
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -276,55 +238,3 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
-
-;; Old:
-
-;; (defun connect-cs111 ()
-;;   "let me `ssh' into cs111 VM"
-;;   (interactive)
-;;   (dired "/ssh:cs111@localhost#2222:/home/cs111/Desktop/cs111-assignments/lab4/lab4"))
-
-;; (require 'epa-file) ;; hot-fix, no longer needed
-;; (epa-file-enable)
-
-;; don't pop windows up without my permission
-;; (setq pop-up-windows nil)
-
-;; (setq switch-to-buffer-obey-display-actions t)
-;; (add-to-list 'display-buffer-alist '("\\*grep\\*.*" display-buffer-reuse-window))
-
-;; (use-package rainbow-delimiters
-;;   :ensure t)
-
-;; for rainbow delims when programming
-;; (add-hook 'prog-mode-hook 'rainbow-delimiters-mode)
-
-;; try a fix for grep ...
-
-;; (defun my-compile-goto-error-same-window ()
-;;   (interactive)
-;;   (let ((display-buffer-overriding-action
-;;          '((display-buffer-reuse-window
-;;             display-buffer-same-window)
-;;            (inhibit-same-window . nil))))
-;;     (call-interactively #'compile-goto-error)))
-
-;; (defun my-compilation-mode-hook ()
-;;   (local-set-key (kbd "<return>") #'my-compile-goto-error-same-window))
-
-;; (add-hook 'compilation-mode-hook #'my-compilation-mode-hook)
-
-;; i really don't want you to mess with my windows
-
-;; (customize-set-variable 'display-buffer-base-action
-;;                         '((display-buffer-reuse-window display-buffer-same-window)
-;;                           (reusable-frames . t)))
-
-;; hello
-;; (use-package dired-subtree
-;;         :ensure t
-;;         :bind (:map dired-mode-map
-;;                     ("i" . dired-subtree-insert)
-;;                     (";" . dired-subtree-remove)
-;;                     ("<tab>" . dired-subtree-toggle)
-;;                     ("<backtab>" . dired-subtree-cycle)))
