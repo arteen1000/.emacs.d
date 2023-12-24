@@ -41,8 +41,8 @@
  '(Man-switches "-a")
  '(inhibit-startup-screen t)
  '(package-native-compile t)
- '(package-selected-packages
-   '(expand-region all-the-icons-dired all-the-icons dired-sidebar dired-subtree doom-themes))
+ '(package-selected-packages '(dired-sidebar dired-subtree expand-region doom-themes))
+ '(send-mail-function 'mailclient-send-it)
  '(treesit-font-lock-level 4))
 
 (defun man-other-window ()
@@ -195,13 +195,6 @@
         (seq "~" eol)                 ;; backup-files
         )))
 
-(eval-after-load "dired"
-  '(progn
-	 (define-key dired-mode-map "b" 'dired-create-empty-file)
-     (define-key dired-mode-map "e" 'dired-omit-mode)
-	 )
-  )
-
 (setq treesit-language-source-alist ;; set up treesit grammars
       '(
         (css "https://github.com/tree-sitter/tree-sitter-css")
@@ -221,9 +214,8 @@
       '((css-mode . css-ts-mode)
         (javascript-mode . js-ts-mode)
         (js-json-mode . json-ts-mode)
-        (python-mode . python-ts-mode)
-        (c-mode . c-ts-mode)
         (c++-mode . c++-ts-mode)
+        (python-mode . python-ts-mode)
         )
       )
 
@@ -231,10 +223,27 @@
   :ensure t
   :bind ("C-=" . er/expand-region))
 
-
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+
+(use-package dired-subtree
+  :ensure t)
+
+(eval-after-load "dired"
+  '(progn
+	 (define-key dired-mode-map "b" 'dired-create-empty-file)
+     (define-key dired-mode-map "e" 'dired-omit-mode)
+     (define-key dired-mode-map (kbd "<tab>") 'dired-subtree-toggle)
+     (define-key dired-mode-map (kbd "H-f") 'find-name-dired)
+     (define-key dired-mode-map (kbd "H-g") 'find-grep-dired)
+	 )
+  )
+
+(add-to-list 'auto-mode-alist '("\\.sm\\'" . c++-mode))
+
+(setq c-basic-offset 2)
+(setq c-ts-mode-indent-offset 2)
