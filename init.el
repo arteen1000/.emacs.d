@@ -17,8 +17,9 @@
 ;; (add-to-list 'custom-theme-load-path "~/.emacs.d/themes")
 (setq scroll-error-top-bottom t) ;; if my movement makes me go past end of buf (or beg), just take me there, instead of signalling error straight away
 
-
-(winner-mode) ;; allow to undo frame window-split changes with C-c <left> and re-do with C-c <right>
+;; restore window configuration, window history
+;; allow to undo frame window-split changes with C-c <left> and re-do with C-c <right>
+(winner-mode) 
 
 
 
@@ -41,7 +42,8 @@
  '(Man-switches "-a")
  '(inhibit-startup-screen t)
  '(package-native-compile t)
- '(package-selected-packages '(dired-sidebar dired-subtree expand-region doom-themes))
+ '(package-selected-packages
+   '(pdf-tools latex-preview-pane utop tuareg dired-sidebar dired-subtree expand-region doom-themes))
  '(send-mail-function 'mailclient-send-it)
  '(treesit-font-lock-level 4))
 
@@ -95,6 +97,8 @@
 ;; (add-to-list 'load-path "~/.emacs.d/orphan-packages/")
 ;; (require 'transpose-frame)
 (global-set-key (kbd "H-t") 'toggle-window-split)
+
+(global-set-key (kbd "H-w") 'window-swap-states)
 
 ;; want an easy way to move between windows
 ;; firstly, remove C-<arrow keys> keybindings for macOS
@@ -198,6 +202,7 @@
 (setq treesit-language-source-alist ;; set up treesit grammars
       '(
         (css "https://github.com/tree-sitter/tree-sitter-css")
+        (java "https://github.com/tree-sitter/tree-sitter-java")
         (javascript "https://github.com/tree-sitter/tree-sitter-javascript")
         (json "https://github.com/tree-sitter/tree-sitter-json")
         (make "https://github.com/alemuller/tree-sitter-make")
@@ -216,6 +221,7 @@
         (js-json-mode . json-ts-mode)
         (c++-mode . c++-ts-mode)
         (python-mode . python-ts-mode)
+        (java-mode . java-ts-mode)
         )
       )
 
@@ -247,3 +253,39 @@
 
 (setq c-basic-offset 2)
 (setq c-ts-mode-indent-offset 2)
+
+(setq java-ts-mode-indent-offset 2)
+
+(use-package dired-sidebar
+  :ensure t
+  :bind (("H-k" . dired-sidebar-toggle-sidebar))
+  )
+
+;; Ocaml
+(use-package tuareg
+  :ensure t
+  :mode (("\\.ocamlinit\\'" . tuareg-mode)))
+
+(use-package utop
+  :ensure t)
+
+(setq utop-command "opam exec -- utop -emacs")
+
+(add-to-list 'same-window-buffer-names "*utop*")
+
+(use-package latex-preview-pane
+  :ensure t)
+
+(latex-preview-pane-enable)
+(add-hook 'LaTeX-mode-hook 'latex-preview-pane-mode)
+
+(use-package pdf-tools
+  :ensure t)
+
+(pdf-tools-install) 
+(pdf-loader-install)
+
+(setq backup-directory-alist '(("." . "~/.emacs.d/backups/")))
+
+;; Prolog vs. Perl
+(add-to-list 'auto-mode-alist '("\\.\\(pl\\|pro\\|lgt\\)" . prolog-mode))
