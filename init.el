@@ -1,4 +1,4 @@
-;; --:**- init.el --  -*- lexical-binding: t; -*-
+;;; --:**- init.el --  -*- lexical-binding: t; -*-
 ;; Code:
 
 ;; Note: git-timemachine may be useful at some point
@@ -43,7 +43,7 @@
  '(inhibit-startup-screen t)
  '(package-native-compile t)
  '(package-selected-packages
-   '(pdf-tools latex-preview-pane utop tuareg dired-sidebar dired-subtree expand-region doom-themes))
+   '(vterm rust-mode pdf-tools latex-preview-pane utop tuareg dired-sidebar dired-subtree expand-region doom-themes))
  '(send-mail-function 'mailclient-send-it)
  '(treesit-font-lock-level 4))
 
@@ -61,8 +61,8 @@
    (switch-to-buffer (other-buffer buf))
     (switch-to-buffer-other-window buf)))
 
-(global-set-key (kbd "H-s o") 'eshell-other-window)
-(global-set-key (kbd "H-s H-s") 'eshell)
+(global-set-key (kbd "H-v o") 'vterm-other-window)
+(global-set-key (kbd "H-v H-v") 'vterm)
 
 (global-set-key (kbd "H-m o") 'man-other-window)
 (global-set-key (kbd "H-m H-m") 'man)
@@ -98,7 +98,18 @@
 ;; (require 'transpose-frame)
 (global-set-key (kbd "H-t") 'toggle-window-split)
 
-(global-set-key (kbd "H-w") 'window-swap-states)
+(defun comment-or-uncomment-region-or-line ()
+    "Comments or uncomments the region or the current line if there's no active region."
+    (interactive)
+    (let (beg end)
+        (if (region-active-p)
+            (setq beg (region-beginning) end (region-end))
+            (setq beg (line-beginning-position) end (line-end-position)))
+        (comment-or-uncomment-region beg end)))
+
+(global-set-key (kbd "H-w") 'comment-or-uncomment-region-or-line)
+
+;; (global-set-key (kbd "H-w") 'window-swap-states)
 
 ;; want an easy way to move between windows
 ;; firstly, remove C-<arrow keys> keybindings for macOS
@@ -210,6 +221,7 @@
         (python "https://github.com/tree-sitter/tree-sitter-python")
         (c "https://github.com/tree-sitter/tree-sitter-c")
         (cpp "https://github.com/tree-sitter/tree-sitter-cpp")
+        (rust "https://github.com/tree-sitter/tree-sitter-rust")
         )
       )
 
@@ -272,12 +284,13 @@
 (setq utop-command "opam exec -- utop -emacs")
 
 (add-to-list 'same-window-buffer-names "*utop*")
+(add-to-list 'same-window-buffer-names "*Buffer List*")
 
-(use-package latex-preview-pane
-  :ensure t)
+;; (use-package latex-preview-pane
+;;   :ensure t)
 
-(latex-preview-pane-enable)
-(add-hook 'LaTeX-mode-hook 'latex-preview-pane-mode)
+;; (latex-preview-pane-enable)
+;; (add-hook 'LaTeX-mode-hook 'latex-preview-pane-mode)
 
 (use-package pdf-tools
   :ensure t)
@@ -289,3 +302,14 @@
 
 ;; Prolog vs. Perl
 (add-to-list 'auto-mode-alist '("\\.\\(pl\\|pro\\|lgt\\)" . prolog-mode))
+
+;; rust support
+(use-package rust-mode
+  :ensure t
+  :init
+  (setq rust-mode-treesitter-derive t))
+
+(use-package vterm
+  :ensure t
+  :config
+  (setq vterm-timer-delay 0.01))
