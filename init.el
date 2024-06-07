@@ -21,8 +21,6 @@
 ;; allow to undo frame window-split changes with C-c <left> and re-do with C-c <right>
 (winner-mode) 
 
-
-
 ;; makes consistent with shell
 ;; but this messes with mark being set before things like M->
 ;; (defadvice kill-region (before unix-werase activate compile)
@@ -43,7 +41,7 @@
  '(inhibit-startup-screen t)
  '(package-native-compile t)
  '(package-selected-packages
-   '(vterm rust-mode pdf-tools latex-preview-pane utop tuareg dired-sidebar dired-subtree expand-region doom-themes))
+   '(dtrt-indent counsel-projectile counsel projectile company lsp-java lsp-mode magit vterm rust-mode pdf-tools latex-preview-pane utop tuareg dired-sidebar dired-subtree expand-region doom-themes))
  '(send-mail-function 'mailclient-send-it)
  '(treesit-font-lock-level 4))
 
@@ -187,7 +185,7 @@
   :ensure t
   :config
   (when (memq window-system '(mac ns x))
-    (exec-path-from-shell-initialize))
+   (exec-path-from-shell-initialize))
   )
 
 (use-package doom-themes
@@ -256,10 +254,12 @@
 	 (define-key dired-mode-map "b" 'dired-create-empty-file)
      (define-key dired-mode-map "e" 'dired-omit-mode)
      (define-key dired-mode-map (kbd "<tab>") 'dired-subtree-toggle)
-     (define-key dired-mode-map (kbd "H-f") 'find-name-dired)
-     (define-key dired-mode-map (kbd "H-g") 'find-grep-dired)
 	 )
   )
+
+(global-set-key (kbd "H-f") 'find-name-dired)
+(global-set-key (kbd "H-g") 'find-grep-dired)
+
 
 (add-to-list 'auto-mode-alist '("\\.sm\\'" . c++-mode))
 
@@ -313,3 +313,70 @@
   :ensure t
   :config
   (setq vterm-timer-delay 0.01))
+
+;; try some newline QOL
+
+;; (bind-key "RET" #'reindent-then-newline-and-indent)
+
+;; (global-set-key
+;;  [remap newline]
+;;  `(menu-item "" default-indent-new-line :filter
+;;              ,(lambda (_cmd)
+;;                 (when (save-excursion (comment-beginning))
+;;                   `(lambda () (interactive) (,comment-line-break-function))))))
+
+
+;; (global-set-key (kbd "RET") (key-binding (kbd "M-j")))
+
+(use-package magit
+  :ensure t)
+
+(use-package clang-format
+  :ensure t)
+
+(defun clang-format-save-hook-for-this-buffer ()
+  "Create a buffer local save hook."
+  (add-hook 'before-save-hook
+            (lambda ()
+              (when (locate-dominating-file "." ".clang-format")
+                (clang-format-buffer))
+              ;; Continue to save.
+              nil)
+            nil
+            ;; Buffer local hook.
+            t))
+
+;; Run this for each mode you want to use the hook.
+;; (add-hook 'c-mode-hook (lambda () (clang-format-save-hook-for-this-buffer)))
+(add-hook 'c++-mode-hook (lambda () (clang-format-save-hook-for-this-buffer)))
+(add-hook 'c++-ts-mode-hook (lambda () (clang-format-save-hook-for-this-buffer)))
+
+(use-package projectile
+  :ensure t)
+(use-package counsel
+  :ensure t)
+(use-package counsel-projectile
+  :ensure t)
+(counsel-mode)
+(counsel-projectile-mode)
+(define-key projectile-mode-map (kbd "H-p") 'projectile-command-map)
+(global-set-key "\C-s" 'counsel-grep-or-swiper)
+(global-set-key "\C-r" 'counsel-grep-or-swiper)
+(global-set-key (kbd "C-x b") 'counsel-switch-buffer)
+(define-key ivy-minibuffer-map "\C-r" 'ivy-previous-line-or-history)
+(define-key ivy-minibuffer-map "\C-s" 'ivy-next-line-or-history)
+(add-to-list 'ivy-sort-matches-functions-alist '(counsel-find-file . ivy-sort-function-buffer))
+(add-to-list 'ivy-sort-matches-functions-alist '(counsel-switch-buffer . ivy-sort-function-buffer))
+(add-to-list 'ivy-sort-matches-functions-alist '(counsel-projectile-find-file . ivy-sort-function-buffer))
+(add-to-list 'ivy-sort-matches-functions-alist '(counsel-M-x . ivy-sort-function-buffer))
+(setq ivy-height-alist
+      '((t
+         lambda (_caller)
+         (/ (frame-height) 2))))
+(add-to-list 'ivy-height-alist (cons 'counsel-find-file
+                                     (lambda (_caller)
+                                       (/ (frame-height) 3))))
+
+;; (use-package dtrt-indent
+;;   :ensure t)
+;; (dtrt-indent-global-mode)
