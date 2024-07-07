@@ -1,0 +1,3 @@
+[submodule "my-packages/clang-format-lite"]
+	path = my-packages/clang-format-lite
+	url = https://github.com/arteen1000/clang-format-lite.git

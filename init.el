@@ -48,9 +48,15 @@
 (global-set-key (kbd "M-<up>") 'windmove-delete-up)
 (global-set-key (kbd "M-<down>") 'windmove-delete-down)
 ;; end hack
-(defun connect ()
+(defun connect-hexaconta ()
+  "let me `ssh' into hexaconta"
   (interactive)
-  (dired "/ssh:arm:/home/artabr01/"))
+  (dired "/ssh:hexaconta:/home/arteen"))
+
+(defun connect-lug ()
+  "let me `ssh' into lug"
+  (interactive)
+  (dired "/ssh:root@lug:/var/www/html"))
 (setq dired-omit-files
       (rx (or (seq bol (? ".") "#")
               (seq bol "." (not (any ".")))
@@ -98,22 +104,6 @@
   :config
   (setq vterm-timer-delay 0.01))
 ;; begin
-;; (use-package clang-format
-;;   :ensure t)
-;; (defun clang-format-save-hook-for-this-buffer ()
-;;   "Create a buffer local save hook."
-;;   (add-hook 'before-save-hook
-;;             (lambda ()
-;;               (when (locate-dominating-file "." ".clang-format")
-;;                 (clang-format-buffer))
-;;               ;; Continue to save.
-;;               nil)
-;;             nil
-;;             ;; Buffer local hook.
-;;             t))
-;; (add-hook 'c++-mode-hook (lambda () (clang-format-save-hook-for-this-buffer)))
-;; end
-;; begin
 (use-package counsel-projectile
   :ensure t)
 (counsel-mode)
@@ -139,7 +129,7 @@
 (setq ivy-use-selectable-prompt t)
 ;; begin
 (add-to-list 'load-path "~/.emacs.d/my-packages/llvm")
-(add-to-list 'load-path "~/.emacs.d/my-packages/clang-format-remote")
+(add-to-list 'load-path "~/.emacs.d/my-packages/clang-format-lite")
 (require 'tablegen-mode)
 ;; end
 ;; end
@@ -169,9 +159,10 @@
 (add-hook 'prog-mode-hook #'electric-indent-local-mode)
 ;; end
 ;; begin
-(require 'clang-format-remote)
+(require 'clang-format-lite)
 (add-hook 'c++-mode-hook #'clang-format-save-hook)
 ;; end
-
 (use-package flycheck
+  :ensure t)
+(use-package package-lint
   :ensure t)
