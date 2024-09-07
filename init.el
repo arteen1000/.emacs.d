@@ -129,7 +129,7 @@
 (setq ivy-use-selectable-prompt t)
 ;; begin
 (add-to-list 'load-path "~/.emacs.d/my-packages/llvm")
-(add-to-list 'load-path "~/.emacs.d/my-packages/clang-format-lite")
+;; (add-to-list 'load-path "~/.emacs.d/my-packages/clang-format-lite")
 (require 'tablegen-mode)
 ;; end
 ;; end
@@ -144,7 +144,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(package-lint flycheck treesit-auto dired-subtree use-package doom-themes)))
+   '(pdf-tools clang-format-lite package-lint flycheck treesit-auto dired-subtree use-package doom-themes)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -159,8 +159,9 @@
 (add-hook 'prog-mode-hook #'electric-indent-local-mode)
 ;; end
 ;; begin
-(require 'clang-format-lite)
-(add-hook 'c++-mode-hook #'clang-format-save-hook)
+(use-package clang-format-lite
+  :ensure t)
+(add-hook 'c++-mode-hook #'clang-format-lite-save-hook)
 ;; end
 (use-package flycheck
   :ensure t)
