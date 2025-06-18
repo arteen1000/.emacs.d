@@ -1,58 +1,63 @@
-;; useful: delete-blank-lines
+;; useful: delete-blank-lines -- C-x C-o -- like M-<space> for lines
 ;; begin
 (setq ns-function-modifier 'hyper)
 (global-hl-line-mode)
+(electric-indent-mode 0)
+(add-hook 'prog-mode-hook #'electric-indent-local-mode)
 (when (string= system-type "darwin")
   (setq dired-use-ls-dired nil))
 (setq inhibit-startup-screen t)
 (setq ring-bell-function 'ignore)
 (setq column-number-mode t)
-(setq-default indent-tabs-mode nil)
+(setq-default indent-tabs-mode nil) ; no tabs
 (setq-default tab-width 2)
-;; (setq indent-line-function 'insert-tab)
 (setq tramp-auto-save-directory "/tmp")
-(global-auto-revert-mode)
+(setf kill-buffer-delete-auto-save-files t)
 (setq use-short-answers t)
-(delete-selection-mode)
-(setq scroll-error-top-bottom t)
+(delete-selection-mode) ; paste over text
+(setq scroll-error-top-bottom t) ; move to top/bot before error'ing
 (winner-mode) ;; C-c <left> and C-c <right>
+(defun rotate-windows (arg)
+  "Rotate your windows; use the prefix argument to rotate the other direction"
+  (interactive "P")
+  (if (not (> (count-windows) 1))
+      (message "You can't rotate a single window!")
+    (let* ((rotate-times (prefix-numeric-value arg))
+           (direction (if (or (< rotate-times 0) (equal arg '(4)))
+                          'identity 'reverse))) ; clockwise default
+      (dotimes (_ (abs rotate-times))
+        (dotimes (i (- (count-windows) 1))
+          (let* ((w1 (elt (funcall direction (window-list)) i))
+                 (w2 (elt (funcall direction (window-list)) (+ i 1)))
+                 (b1 (window-buffer w1))
+                 (b2 (window-buffer w2))
+                 (s1 (window-start w1))
+                 (s2 (window-start w2))
+                 (p1 (window-point w1))
+                 (p2 (window-point w2)))
+            (set-window-buffer-start-and-point w1 b2 s2 p2)
+            (set-window-buffer-start-and-point w2 b1 s1 p1)))))))
+(global-set-key (kbd "H-r") #'rotate-windows)
+(windmove-default-keybindings 'control) ; move cursor
+(windmove-swap-states-default-keybindings '(shift control)) ; swap the states
+(windmove-delete-default-keybindings 'none 'meta) ; delete
 (defun transpose-windows ()
+  "Toggle between horizontal and vertical split with two windows."
   (interactive)
-  (if (= (count-windows) 2)
-      (let* ((this-win-buffer (window-buffer))
-             (next-win-buffer (window-buffer (next-window)))
-             (this-win-edges (window-edges (selected-window)))
-             (next-win-edges (window-edges (next-window)))
-             (this-win-2nd (not (and (<= (car this-win-edges)
-                                         (car next-win-edges))
-                                     (<= (cadr this-win-edges)
-                                         (cadr next-win-edges)))))
-             (splitter
-              (if (= (car this-win-edges)
-                     (car (window-edges (next-window))))
-                  'split-window-horizontally
-                'split-window-vertically)))
-        (delete-other-windows)
-        (let ((first-win (selected-window)))
-          (funcall splitter)
-          (if this-win-2nd (other-window 1))
-          (set-window-buffer (selected-window) this-win-buffer)
-          (set-window-buffer (next-window) next-win-buffer)
-          (select-window first-win)
-          (if this-win-2nd (other-window 1))))))
-(windmove-default-keybindings 'control)
-(windmove-swap-states-default-keybindings '(shift control))
-;; begin hack
-(global-set-key (kbd "M-<left>") 'windmove-delete-left)
-(global-set-key (kbd "M-<right>") 'windmove-delete-right)
-(global-set-key (kbd "M-<up>") 'windmove-delete-up)
-(global-set-key (kbd "M-<down>") 'windmove-delete-down)
-;; end hack
+  (if (> (length (window-list)) 2)
+      (error "Can't toggle with more than 2 windows!")
+    (let ((func (if (window-full-height-p)
+                    #'split-window-vertically
+                  #'split-window-horizontally)))
+      (delete-other-windows)
+      (funcall func)
+      (save-selected-window
+        (other-window 1)
+        (switch-to-buffer (other-buffer))))))
 (defun connect-hexaconta ()
   "let me `ssh' into hexaconta"
   (interactive)
   (dired "/ssh:hexaconta:/home/arteen"))
-
 (defun connect-lug ()
   "let me `ssh' into lug"
   (interactive)
@@ -64,14 +69,20 @@
 (eval-after-load "dired"
   '(progn
      (define-key dired-mode-map "b" 'dired-create-empty-file)
-     (define-key dired-mode-map "e" 'dired-omit-mode)
-     (define-key dired-mode-map (kbd "<tab>") 'dired-subtree-toggle)))
+     (define-key dired-mode-map "e" 'dired-omit-mode)))
 ;; begin
 (add-to-list 'same-window-buffer-names "*Buffer List*")
 (add-to-list 'same-window-buffer-names "*Help*")
 ;; end
 (setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
+;; begin
+(add-hook 'c++-mode-hook (lambda ()
+                           (setq-local compile-command
+                                       (format "g++ --std=c++17 %s" (shell-quote-argument (file-name-nondirectory buffer-file-name))))
+                           (define-key c++-mode-map (kbd "H-k") 'compile)
+                           ))
 
+;; end
 (require 'package)
 (setq package-archives
       '(("gnu" . "https://elpa.gnu.org/packages/")
@@ -94,76 +105,38 @@
         doom-themes-enable-italic t)
   (load-theme 'doom-vibrant t)
   (doom-themes-visual-bell-config))
-(use-package dired-subtree
-  :ensure t)
-(use-package dired-sidebar
-  :ensure t
-  :bind (("H-k" . dired-sidebar-toggle-sidebar)))
-(use-package vterm
-  :ensure t
-  :config
-  (setq vterm-timer-delay 0.01))
-;; begin
-(use-package counsel-projectile
-  :ensure t)
-(counsel-mode)
-(counsel-projectile-mode)
-(define-key projectile-mode-map (kbd "H-p") 'projectile-command-map)
-(global-set-key "\C-s" 'counsel-grep-or-swiper)
-(global-set-key "\C-r" 'counsel-grep-or-swiper)
-(global-set-key (kbd "C-x b") 'counsel-switch-buffer)
-(define-key ivy-minibuffer-map "\C-r" 'ivy-previous-line-or-history)
-(define-key ivy-minibuffer-map "\C-s" 'ivy-next-line-or-history)
-(add-to-list 'ivy-sort-matches-functions-alist '(counsel-find-file . ivy-sort-function-buffer))
-(add-to-list 'ivy-sort-matches-functions-alist '(counsel-switch-buffer . ivy-sort-function-buffer))
-(add-to-list 'ivy-sort-matches-functions-alist '(counsel-projectile-find-file . ivy-sort-function-buffer))
-(add-to-list 'ivy-sort-matches-functions-alist '(counsel-M-x . ivy-sort-function-buffer))
-(setq ivy-height-alist
-      '((t
-         lambda (_caller)
-         (/ (frame-height) 2))))
-(add-to-list 'ivy-height-alist (cons 'counsel-find-file
-                                     (lambda (_caller)
-                                       (/ (frame-height) 3))))
-(setq counsel-find-file-ignore-regexp "\\`[#.]\\|[#~]\\'")
-(setq ivy-use-selectable-prompt t)
-;; begin
-(add-to-list 'load-path "~/.emacs.d/my-packages/llvm")
-;; (add-to-list 'load-path "~/.emacs.d/my-packages/clang-format-lite")
-(require 'tablegen-mode)
-;; end
-;; end
 (use-package exec-path-from-shell
   :ensure t
   :config
   (when (memq window-system '(mac ns x))
    (exec-path-from-shell-initialize)))
+(use-package clang-format-lite
+  :ensure t
+  :config
+  (add-hook 'c++-mode-hook #'clang-format-lite-save-hook))
+(use-package python-black
+  :ensure t
+  :after python
+  :hook (python-mode . python-black-on-save-mode)) ; -enable-dwim for only in black project
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(pdf-tools clang-format-lite package-lint flycheck treesit-auto dired-subtree use-package doom-themes)))
+   '(go-mode latex-preview-pane clang-format-lite exec-path-from-shell doom-themes))
+ '(shell-escape-mode "-shell-escape"))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
-;; begin
-(setq treesit-font-lock-level 4)
-;; end
-;; begin
-(electric-indent-mode 0)
-(add-hook 'prog-mode-hook #'electric-indent-local-mode)
-;; end
-;; begin
-(use-package clang-format-lite
+(use-package latex-preview-pane
+  :ensure t
+  :config
+  (latex-preview-pane-enable)
+  )
+(use-package go-mode
   :ensure t)
-(add-hook 'c++-mode-hook #'clang-format-lite-save-hook)
-;; end
-(use-package flycheck
-  :ensure t)
-(use-package package-lint
-  :ensure t)
+(setq create-lockfiles nil)
